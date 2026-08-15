@@ -7,7 +7,7 @@ Submissions for the DevOps with Kubernetes course.
 ### Chapter 2
 
 - [1.1](https://github.com/lauraculma/KubernetesSubmissions/tree/1.1/log_output)
-- [1.2](#)
+- [1.2](https://github.com/lauraculma/KubernetesSubmissions/tree/1.2)
 - [1.3](#)
 - [1.4](#)
 - [1.5](#)
