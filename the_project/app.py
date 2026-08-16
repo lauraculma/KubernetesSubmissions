@@ -6,7 +6,7 @@ PORT = int(os.environ.get("PORT", 3000))
 
 @app.route('/')
 def home():
-    return "Todo App - Project v0.1"
+    return "<h1>Todo App - Project v0.3</h1><p>Welcome to the Todo Application!</p>"
 
 if __name__ == '__main__':
     print(f"Server started in port {PORT}", flush=True)
