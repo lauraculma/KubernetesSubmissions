@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: the-project-dep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: the-project
+  template:
+    metadata:
+      labels:
+        app: the-project
+    spec:
+      containers:
+        - name: the-project
+          image: the-project:1.0
+          imagePullPolicy: Never
+          env:
+            - name: PORT
+              value: "8080"
