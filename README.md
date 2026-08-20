@@ -21,7 +21,7 @@ Submissions for the DevOps with Kubernetes course.
 - [1.13](https://github.com/lauraculma/KubernetesSubmissions/tree/1.13)
 
 ### Chapter 3
-- [2.1](#)
+- [2.1](https://github.com/lauraculma/KubernetesSubmissions/tree/2.1)
 - [2.2](#)
 - [2.3](#)
 - [2.4](#)
