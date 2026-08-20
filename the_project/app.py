@@ -21,7 +21,7 @@ def get_image():
         fetch_image()
     else:
         file_age = time.time() - os.path.getmtime(image_path)
-        if file_age > 600:  # 10 minutos (600 segundos)
+        if file_age > 600:
             fetch_image()
 
 @app.route('/image.jpg')
@@ -31,23 +31,49 @@ def serve_image():
 
 @app.route('/')
 def index():
+    todos = [
+        "Learn Kubernetes basics",
+        "Deploy application to cluster",
+        "Configure persistent volumes"
+    ]
+    
     html_content = """
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
+        <meta charset="UTF-8">
         <title>Todo App</title>
         <style>
-            body { font-family: sans-serif; text-align: center; margin-top: 40px; }
-            img { width: 400px; height: 400px; object-fit: cover; border-radius: 8px; }
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; text-align: center; color: #333; }
+            h1 { font-size: 2.2rem; }
+            .project-img { width: 300px; height: 300px; object-fit: cover; border-radius: 12px; margin-bottom: 25px; }
+            .todo-form { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+            input[type="text"] { width: 70%; padding: 10px; font-size: 1rem; border: 2px solid #4CAF50; border-radius: 6px; outline: none; }
+            button { padding: 10px 20px; font-size: 1rem; background-color: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; }
+            button:hover { background-color: #45a049; }
+            .todo-list { list-style: none; padding: 0; text-align: left; }
+            .todo-item { background-color: #f9f9f9; padding: 12px 15px; margin-bottom: 10px; border-left: 5px solid #4CAF50; border-radius: 4px; font-size: 1.05rem; }
         </style>
     </head>
     <body>
         <h1>Todo App</h1>
-        <img src="/image.jpg" alt="Random Image">
+        <img class="project-img" src="/image.jpg" alt="Random image">
+        
+        <form class="todo-form" onsubmit="event.preventDefault();">
+            <input type="text" maxlength="140" placeholder="Enter a new todo (max 140 characters)">
+            <button type="submit">Send</button>
+        </form>
+
+        <h2>Todos</h2>
+        <ul class="todo-list">
+            {% for todo in todos %}
+                <li class="todo-item">{{ todo }}</li>
+            {% endfor %}
+        </ul>
     </body>
     </html>
     """
-    return render_template_string(html_content)
+    return render_template_string(html_content, todos=todos)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
