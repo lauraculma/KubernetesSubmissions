@@ -1,20 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pong-app-dep
+  name: pingpong-dep
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pong-app
+      app: pingpong
   template:
     metadata:
       labels:
-        app: pong-app
+        app: pingpong
     spec:
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-data-pvc
       containers:
-        - name: pong-app
-          image: pong-app:1.0
+        - name: pingpong
+          image: ping-pong:1.1
           imagePullPolicy: Never
           ports:
-            - containerPort: 3000
+            - containerPort: 5000
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /usr/src/app/files
