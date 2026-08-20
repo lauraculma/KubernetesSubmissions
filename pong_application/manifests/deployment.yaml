@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pong-app-dep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pong-app
+  template:
+    metadata:
+      labels:
+        app: pong-app
+    spec:
+      containers:
+        - name: pong-app
+          image: pong-app:1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3000
