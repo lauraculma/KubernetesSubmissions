@@ -1,27 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: project-dep
+  name: the-project-dep
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: project
+      app: the-project
   template:
     metadata:
       labels:
-        app: project
+        app: the-project
     spec:
-      volumes:
-        - name: shared-storage
-          persistentVolumeClaim:
-            claimName: shared-data-pvc
       containers:
-        - name: project
-          image: project-app:1.13
+        - name: the-project
+          image: the-project:1.0
           imagePullPolicy: Never
-          ports:
-            - containerPort: 5000
-          volumeMounts:
-            - name: shared-storage
-              mountPath: /usr/src/app/files
+          env:
+            - name: PORT
+              value: "8080"
