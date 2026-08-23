@@ -1,8 +1,18 @@
 import os
+import sys
 import time
+import logging
 import psycopg2
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+
+# Configurar logging hacia stdout
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s: %(message)s'
+)
+logger = logging.getLogger("todo-backend")
 
 app = Flask(__name__)
 CORS(app)
@@ -24,7 +34,7 @@ def get_db_connection():
             )
             return conn
         except Exception as e:
-            print(f"Waiting for database: {e}", flush=True)
+            logger.error(f"Waiting for database: {e}")
             time.sleep(2)
 
 def init_db():
@@ -44,6 +54,7 @@ init_db()
 
 @app.route('/todos', methods=['GET'])
 def get_todos():
+    logger.info("Received GET /todos request")
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT text FROM todos ORDER BY id ASC;")
@@ -57,9 +68,16 @@ def get_todos():
 def create_todo():
     data = request.get_json(silent=True) or {}
     todo = data.get("todo")
-    if not todo or len(todo) > 140:
-        return jsonify({"error": "Todo text is invalid or exceeds 140 chars"}), 400
 
+    if not todo:
+        logger.warning("Rejected POST /todos: Empty or missing 'todo' field")
+        return jsonify({"error": "No todo provided"}), 400
+
+    if len(todo) > 140:
+        logger.warning(f"Rejected POST /todos: Todo text too long ({len(todo)} chars > 140). Content: '{todo}'")
+        return jsonify({"error": "Todo cannot be longer than 140 characters"}), 400
+
+    logger.info(f"Accepted POST /todos: Creating todo: '{todo}'")
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("INSERT INTO todos (text) VALUES (%s);", (todo,))
@@ -70,5 +88,5 @@ def create_todo():
     return jsonify({"message": "Todo created", "todo": todo}), 201
 
 if __name__ == '__main__':
-    print(f"Backend started on port {PORT}", flush=True)
+    logger.info(f"Backend starting on port {PORT}")
     app.run(host='0.0.0.0', port=PORT)
