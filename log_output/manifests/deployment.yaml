@@ -13,9 +13,26 @@ spec:
       labels:
         app: log-output
     spec:
+      volumes:
+        - name: config-volume
+          configMap:
+            name: log-output-configmap
+            items:
+              - key: information.txt
+                path: information.txt
       containers:
         - name: log-output
-          image: log-output:1.0
+          image: log-output:2.05
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
+          env:
+            - name: MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: log-output-configmap
+                  key: MESSAGE
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+              readOnly: true

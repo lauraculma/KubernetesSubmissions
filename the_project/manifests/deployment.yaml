@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: the-project-dep
+  namespace: project
 spec:
   replicas: 1
   selector:
@@ -16,6 +17,8 @@ spec:
         - name: the-project
           image: the-project:1.0
           imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
           env:
             - name: PORT
               value: "8080"
