@@ -15,10 +15,10 @@ spec:
     spec:
       containers:
         - name: todo-backend
-          image: todo-backend:1.0
+          image: todo-backend:2.06
           imagePullPolicy: Never
           ports:
             - containerPort: 5000
-          env:
-            - name: PORT
-              value: "5000"
+          envFrom:
+            - configMapRef:
+                name: todo-backend-config

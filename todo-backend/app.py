@@ -5,7 +5,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Lista inicial de tareas guardadas en memoria
+PORT = int(os.environ.get("PORT", 5000))
 todos = ["Buy groceries", "Study Kubernetes"]
 
 @app.route('/todos', methods=['GET'])
@@ -22,6 +22,5 @@ def create_todo():
     return jsonify({"error": "No todo provided"}), 400
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    print(f"Server started in port {port}", flush=True)
-    app.run(host='0.0.0.0', port=port)
+    print(f"Backend started on port {PORT}", flush=True)
+    app.run(host='0.0.0.0', port=PORT)
