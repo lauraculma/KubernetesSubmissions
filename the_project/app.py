@@ -2,7 +2,7 @@ import os
 from flask import Flask
 
 app = Flask(__name__)
-PORT = int(os.environ.get("PORT", 3000))
+PORT = int(os.environ.get("PORT", 8080))
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -54,5 +54,5 @@ def home():
     return HTML_TEMPLATE
 
 if __name__ == '__main__':
-    print(f"Server started in port {PORT}", flush=True)
+    print(f"Server started on port {PORT}", flush=True)
     app.run(host='0.0.0.0', port=PORT)

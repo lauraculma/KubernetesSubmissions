@@ -15,10 +15,10 @@ spec:
     spec:
       containers:
         - name: the-project
-          image: the-project:1.0
+          image: the-project:2.06
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
-          env:
-            - name: PORT
-              value: "8080"
+          envFrom:
+            - configMapRef:
+                name: the-project-config
