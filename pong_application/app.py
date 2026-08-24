@@ -45,10 +45,6 @@ def init_db():
 init_db()
 
 @app.route('/')
-def health():
-    return "OK", 200
-
-@app.route('/pingpong')
 def pingpong():
     conn = get_db_connection()
     cur = conn.cursor()

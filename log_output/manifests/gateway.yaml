@@ -4,7 +4,7 @@ metadata:
   name: exercises-gateway
   namespace: exercises
 spec:
-  gatewayClassName: istio # O traefik / standard según el controlador de tu clúster
+  gatewayClassName: istio
   listeners:
     - name: http
       protocol: HTTP
@@ -26,6 +26,12 @@ spec:
         - path:
             type: PathPrefix
             value: /pingpong
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
       backendRefs:
         - name: pong-app-svc
           port: 80
