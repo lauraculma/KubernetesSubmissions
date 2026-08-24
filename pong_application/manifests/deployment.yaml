@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: pong-app
-          image: pong-app:2.07
+          image: pong-app:3.01
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
