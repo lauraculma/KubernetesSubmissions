@@ -42,8 +42,11 @@ def init_db():
     cur.close()
     conn.close()
 
-# Inicializar tabla al arrancar
 init_db()
+
+@app.route('/')
+def health():
+    return "OK", 200
 
 @app.route('/pingpong')
 def pingpong():

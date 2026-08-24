@@ -22,7 +22,7 @@ spec:
                 path: information.txt
       containers:
         - name: log-output
-          image: log-output:2.05
+          image: log-output:3.02
           imagePullPolicy: Never
           ports:
             - containerPort: 3000

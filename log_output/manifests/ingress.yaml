@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: log-pong-ingress
+  name: exercises-ingress
   namespace: exercises
 spec:
   rules:
