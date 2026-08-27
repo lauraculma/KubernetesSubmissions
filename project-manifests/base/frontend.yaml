@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: the-project-dep
 spec:
+  strategy:
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:
@@ -14,8 +16,7 @@ spec:
     spec:
       containers:
         - name: the-project
-          image: the-project:2.06
-          imagePullPolicy: Never
+          image: the-project-image
           ports:
             - containerPort: 8080
           env:

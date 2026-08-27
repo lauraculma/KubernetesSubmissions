@@ -8,3 +8,11 @@ resources:
   - backend.yaml
   - frontend.yaml
   - ingress-and-cronjob.yaml
+
+images:
+  - name: todo-backend-image
+    newName: todo-backend
+    newTag: latest
+  - name: the-project-image
+    newName: the-project
+    newTag: latest
