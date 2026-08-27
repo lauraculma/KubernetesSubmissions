@@ -1,9 +1,9 @@
-name: Release and Deploy Project
+name: Release and Deploy Branch Environments
 
 on:
   push:
     branches:
-      - main
+      - '*'
     paths:
       - 'the_project/**'
       - 'todo-backend/**'
@@ -18,6 +18,20 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+
+      - name: Extract Branch Name and Set Namespace
+        id: extract_env
+        run: |
+          BRANCH_NAME=${GITHUB_REF_NAME}
+          # Si la rama es main, el namespace debe ser 'project'
+          if [ "$BRANCH_NAME" = "main" ]; then
+            NAMESPACE="project"
+          else
+            # Reemplazar barras diagonales y caracteres no válidos por guiones
+            NAMESPACE=$(echo "$BRANCH_NAME" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          fi
+          echo "target_namespace=$NAMESPACE" >> $GITHUB_OUTPUT
+          echo "Target namespace is: $NAMESPACE"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -42,9 +56,10 @@ jobs:
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2
 
-      - name: Update Image Tags with Kustomize
+      - name: Update Images and Namespace with Kustomize
         run: |
           cd project-manifests/overlays/prod
+          kustomize edit set namespace ${{ steps.extract_env.outputs.target_namespace }}
           kustomize edit set image todo-backend-image=${{ secrets.DOCKER_USERNAME }}/todo-backend:${{ github.sha }}
           kustomize edit set image the-project-image=${{ secrets.DOCKER_USERNAME }}/the-project:${{ github.sha }}
 
