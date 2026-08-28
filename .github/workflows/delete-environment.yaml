@@ -1,0 +1,25 @@
+name: Delete Branch Environment
+
+on:
+  delete:
+
+jobs:
+  delete-namespace:
+    name: Cleanup Environment
+    if: github.event.ref_type == 'branch' && github.event.ref != 'main' && github.event.ref != 'master'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract Namespace Name
+        id: extract_ns
+        run: |
+          RAW_BRANCH="${{ github.event.ref }}"
+          NAMESPACE=$(echo "$RAW_BRANCH" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          echo "target_namespace=$NAMESPACE" >> $GITHUB_OUTPUT
+          echo "Namespace to delete: $NAMESPACE"
+
+      - name: Delete Kubernetes Namespace
+        run: |
+          echo "Deleting namespace: ${{ steps.extract_ns.outputs.target_namespace }}"
+          # Si tienes conexión configurada con kubectl en el runner:
+          # kubectl delete namespace ${{ steps.extract_ns.outputs.target_namespace }} --ignore-not-found
