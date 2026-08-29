@@ -43,6 +43,9 @@ Submissions for the DevOps with Kubernetes course.
 - [3.7](https://github.com/lauraculma/KubernetesSubmissions/tree/3.7)
 - [3.8](https://github.com/lauraculma/KubernetesSubmissions/tree/3.8)
 - [3.9](https://github.com/lauraculma/KubernetesSubmissions/tree/3.9)
+- [3.10](https://github.com/lauraculma/KubernetesSubmissions/tree/3.10)
+- [3.11](https://github.com/lauraculma/KubernetesSubmissions/tree/3.11)
+- [3.12](https://github.com/lauraculma/KubernetesSubmissions/tree/3.12)
 
 ## Database Hosting Comparison: Self-Hosted in Kubernetes (StatefulSet) vs. Managed Database (DBaaS / Google Cloud SQL)
 
