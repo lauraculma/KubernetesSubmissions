@@ -8,6 +8,7 @@ resources:
   - backend.yaml
   - frontend.yaml
   - ingress-and-cronjob.yaml
+  - backup-cronjob.yaml
 
 images:
   - name: todo-backend-image

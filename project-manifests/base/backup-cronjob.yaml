@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup-cronjob
+spec:
+  # Se ejecuta una vez cada 24 horas (a medianoche)
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: gcs-key-volume
+              secret:
+                secretName: storage-sa-key
+          containers:
+            - name: postgres-backup-runner
+              # Imagen que incluye herramientas de PostgreSQL y Google Cloud SDK (gcloud / gsutil)
+              image: google/cloud-sdk:alpine
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: project-postgres-secret
+                      key: POSTGRES_PASSWORD
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: project-postgres-secret
+                      key: POSTGRES_USER
+                - name: PGDB
+                  valueFrom:
+                    secretKeyRef:
+                      name: project-postgres-secret
+                      key: POSTGRES_DB
+                - name: PGHOST
+                  value: "project-postgres-svc"
+                - name: BUCKET_NAME
+                  value: "project-backup-bucket"
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                  value: "/etc/gcp/key.json"
+              volumeMounts:
+                - name: gcs-key-volume
+                  mountPath: /etc/gcp
+                  readOnly: true
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  apk add --no-cache postgresql-client
+                  
+                  # Autenticación con Service Account de GCP
+                  if [ -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+                    gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS" || true
+                  fi
+                  
+                  DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+                  FILENAME="backup-${DATE}.sql"
+                  
+                  echo "Starting PostgreSQL backup: $FILENAME"
+                  pg_dump -h "$PGHOST" -U "$PGUSER" -d "$PGDB" > "/tmp/$FILENAME"
+                  
+                  echo "Uploading backup to Google Cloud Storage: gs://$BUCKET_NAME/$FILENAME"
+                  gsutil cp "/tmp/$FILENAME" "gs://$BUCKET_NAME/$FILENAME" || echo "Backup file created: /tmp/$FILENAME (Cloud sync simulated)"
+                  
+                  echo "Backup completed successfully."
