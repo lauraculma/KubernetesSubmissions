@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: todo-backend
-          image: todo-backend-image
+          image: todo-backend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
           resources:

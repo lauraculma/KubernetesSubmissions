@@ -60,3 +60,8 @@ Submissions for the DevOps with Kubernetes course.
 ### Conclusion
 * **Self-hosted (StatefulSet)** is ideal for local development, CI/CD testing pipelines, small non-critical services, or situations where cost optimization is prioritized over operational labor.
 * **Managed Database (DBaaS)** is the industry standard for production workloads due to minimal operational risk, automated backup lifecycles, built-in disaster recovery, and high availability guarantees.
+
+## Exercise 4.02: Log Monitoring
+Logs captured when creating a new todo via HTTP POST:
+
+![Todo Backend Logs](the_project/logs.png)
