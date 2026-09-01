@@ -2,9 +2,8 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres-ss
-  namespace: exercises
 spec:
-  serviceName: postgres-svc
+  serviceName: "postgres-svc"
   replicas: 1
   selector:
     matchLabels:
@@ -16,21 +15,34 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: postgres:15-alpine
           ports:
             - containerPort: 5432
               name: postgres
-          envFrom:
-            - secretRef:
-                name: postgres-secret
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
           volumeMounts:
-            - name: postgres-data
+            - name: postgres-storage
               mountPath: /var/lib/postgresql/data
   volumeClaimTemplates:
     - metadata:
-        name: postgres-data
+        name: postgres-storage
       spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 256Mi
+            storage: 1Gi

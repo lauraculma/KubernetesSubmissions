@@ -1,24 +1,54 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: the-project-dep
-  namespace: project
+  name: project-dep
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: the-project
+      app: project
   template:
     metadata:
       labels:
-        app: the-project
+        app: project
     spec:
       containers:
-        - name: the-project
-          image: the-project:2.06
-          imagePullPolicy: Never
+        - name: project
+          image: project:v4.02
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
-          envFrom:
-            - configMapRef:
-                name: the-project-config
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 2
+          env:
+            - name: PORT
+              value: "5000"
+            - name: POSTGRES_HOST
+              value: "postgres-svc"
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
