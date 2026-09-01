@@ -1,25 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pong-app-dep
-  namespace: exercises
+  name: pingpong-dep
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pong-app
+      app: pingpong
   template:
     metadata:
       labels:
-        app: pong-app
+        app: pingpong
     spec:
       containers:
-        - name: pong-app
-          image: pong-app:3.04
-          imagePullPolicy: Never
+        - name: pingpong
+          image: pingpong:latest
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3000
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
           env:
+            - name: PORT
+              value: "8080"
             - name: POSTGRES_HOST
               value: "postgres-svc"
             - name: POSTGRES_DB

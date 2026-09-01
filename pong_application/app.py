@@ -1,65 +1,83 @@
 import os
-import time
 import psycopg2
-from flask import Flask
+from flask import Flask, jsonify, Response
 
 app = Flask(__name__)
-PORT = int(os.environ.get("PORT", 3000))
 
-DB_HOST = os.environ.get("POSTGRES_HOST", "postgres-svc")
-DB_NAME = os.environ.get("POSTGRES_DB", "pingpong_db")
-DB_USER = os.environ.get("POSTGRES_USER", "postgres")
-DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "mysecretpassword")
+DB_HOST = os.getenv("POSTGRES_HOST", "postgres-svc")
+DB_NAME = os.getenv("POSTGRES_DB", "postgres")
+DB_USER = os.getenv("POSTGRES_USER", "postgres")
+DB_PASS = os.getenv("POSTGRES_PASSWORD", "postgres")
+PORT = int(os.getenv("PORT", 8080))
 
 def get_db_connection():
-    while True:
-        try:
-            conn = psycopg2.connect(
-                host=DB_HOST,
-                database=DB_NAME,
-                user=DB_USER,
-                password=DB_PASSWORD
-            )
-            return conn
-        except Exception as e:
-            print(f"Waiting for database connection: {e}", flush=True)
-            time.sleep(2)
+    return psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS
+    )
 
 def init_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS counter_table (
-            id SERIAL PRIMARY KEY,
-            count INT NOT NULL
-        );
-    """)
-    cur.execute("SELECT count FROM counter_table WHERE id = 1;")
-    row = cur.fetchone()
-    if row is None:
-        cur.execute("INSERT INTO counter_table (id, count) VALUES (1, 0);")
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS pings (
+                id INT PRIMARY KEY,
+                count INT NOT NULL
+            );
+        """)
+        cur.execute("SELECT count FROM pings WHERE id = 1;")
+        if cur.fetchone() is None:
+            cur.execute("INSERT INTO pings (id, count) VALUES (1, 0);")
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error initializing DB: {e}")
 
 init_db()
 
-@app.route('/')
+@app.route("/healthz", methods=["GET"])
+def healthz():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1;")
+        cur.close()
+        conn.close()
+        return Response("OK", status=200)
+    except Exception as e:
+        return Response(f"DB not connected: {e}", status=500)
+
+@app.route("/pingpong", methods=["GET"])
 def pingpong():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT count FROM counter_table WHERE id = 1;")
-    current_count = cur.fetchone()[0]
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE pings SET count = count + 1 WHERE id = 1 RETURNING count;")
+        count = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        return f"Pong {count}"
+    except Exception as e:
+        return Response(f"Database error: {e}", status=500)
 
-    response = f"pong {current_count}"
+@app.route("/pings", methods=["GET"])
+def pings():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT count FROM pings WHERE id = 1;")
+        res = cur.fetchone()
+        count = res[0] if res else 0
+        cur.close()
+        conn.close()
+        return jsonify({"pings": count})
+    except Exception as e:
+        return Response(f"Database error: {e}", status=500)
 
-    cur.execute("UPDATE counter_table SET count = count + 1 WHERE id = 1;")
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return response
-
-if __name__ == '__main__':
-    print(f"Ping-pong app started on port {PORT}", flush=True)
-    app.run(host='0.0.0.0', port=PORT)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=PORT)

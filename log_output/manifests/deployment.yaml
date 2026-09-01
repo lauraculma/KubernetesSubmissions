@@ -1,38 +1,44 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: log-output-dep
-  namespace: exercises
+  name: logoutput-dep
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: log-output
+      app: logoutput
   template:
     metadata:
       labels:
-        app: log-output
+        app: logoutput
     spec:
       volumes:
-        - name: config-volume
-          configMap:
-            name: log-output-configmap
-            items:
-              - key: information.txt
-                path: information.txt
+        - name: shared-logs
+          emptyDir: {}
       containers:
-        - name: log-output
-          image: log-output:3.02
-          imagePullPolicy: Never
+        - name: log-writer
+          image: log-output-writer:latest
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: shared-logs
+              mountPath: /usr/src/app/files
+        - name: log-reader
+          image: log-output-reader:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
-          env:
-            - name: MESSAGE
-              valueFrom:
-                configMapKeyRef:
-                  name: log-output-configmap
-                  key: MESSAGE
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
           volumeMounts:
-            - name: config-volume
-              mountPath: /config
-              readOnly: true
+            - name: shared-logs
+              mountPath: /usr/src/app/files
+          env:
+            - name: PORT
+              value: "3000"
+            - name: PINGPONG_URL
+              value: "http://pingpong-svc:8080/pings"
