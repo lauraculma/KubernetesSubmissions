@@ -27,8 +27,13 @@ def init_db():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS todos (
                 id SERIAL PRIMARY KEY,
-                content VARCHAR(140) NOT NULL
+                content VARCHAR(140) NOT NULL,
+                done BOOLEAN DEFAULT FALSE
             );
+        """)
+        # Asegurar la columna done si la tabla ya existía previamente
+        cur.execute("""
+            ALTER TABLE todos ADD COLUMN IF NOT EXISTS done BOOLEAN DEFAULT FALSE;
         """)
         conn.commit()
         cur.close()
@@ -44,16 +49,21 @@ HTML_TEMPLATE = """
 <head>
     <title>Todo App</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; background-color: #f9f9f9; }
-        h1 { margin-bottom: 20px; }
-        img { width: 250px; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 25px; }
-        .form-container { display: flex; gap: 10px; width: 100%; max-width: 500px; margin-bottom: 30px; }
-        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button.btn-send { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .todos-list { width: 100%; max-width: 500px; list-style: none; padding: 0; }
-        .todo-item { background: white; border-left: 4px solid #4CAF50; padding: 12px 16px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .break-btn { margin-top: 30px; background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; background-color: #ffffff; color: #333; }
+        h1 { margin-bottom: 20px; font-size: 2rem; }
+        img { width: 220px; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+        .form-container { display: flex; gap: 10px; width: 100%; max-width: 550px; margin-bottom: 25px; }
+        input[type="text"] { flex: 1; padding: 10px 14px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button.btn-send { background-color: #4CAF50; color: white; border: none; padding: 10px 22px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .todos-list { width: 100%; max-width: 550px; list-style: none; padding: 0; margin: 0; }
+        .todo-item { display: flex; justify-content: space-between; align-items: center; background: #fdfdfd; border: 1px solid #e0e0e0; border-left: 4px solid #4CAF50; padding: 14px 18px; margin-bottom: 12px; border-radius: 4px; }
+        .todo-item.done { border-left-color: #9e9e9e; color: #757575; }
+        .todo-item.done .todo-text { text-decoration: line-through; }
+        .btn-mark-done { background-color: #1976d2; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
+        .done-label { color: #2e7d32; font-weight: bold; font-size: 14px; }
+        .break-btn { margin-top: 30px; background-color: #d9534f; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; }
         .error-card { background: #ffebee; border: 1px solid #ffcdd2; color: #b71c1c; padding: 30px; border-radius: 8px; text-align: center; max-width: 500px; margin-top: 50px; }
+        footer { margin-top: 40px; font-size: 12px; color: #777; }
     </style>
 </head>
 <body>
@@ -73,14 +83,34 @@ HTML_TEMPLATE = """
 
     <h2>Todos</h2>
     <ul class="todos-list">
-        {% for todo in todos %}
-        <li class="todo-item">{{ todo }}</li>
+        {% for id, content, done in todos %}
+        <li class="todo-item {% if done %}done{% endif %}">
+            <span class="todo-text">{{ content }}</span>
+            {% if done %}
+                <span class="done-label">Done</span>
+            {% else %}
+                <button class="btn-mark-done" onclick="markDone({{ id }})">Mark done</button>
+            {% endif %}
+        </li>
         {% endfor %}
     </ul>
 
     <form method="POST" action="/break">
         <button type="submit" class="break-btn">break the app</button>
     </form>
+
+    <footer>DevOps with Kubernetes 2026</footer>
+
+    <script>
+        async function markDone(id) {
+            const res = await fetch(`/todos/${id}`, { method: 'PUT' });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to mark todo as done');
+            }
+        }
+    </script>
     {% endif %}
 </body>
 </html>
@@ -105,7 +135,6 @@ def healthz():
 def break_app():
     global is_healthy
     is_healthy = False
-    print("Application marked as UNHEALTHY via break button.")
     return redirect(url_for("index"))
 
 @app.route("/", methods=["GET"])
@@ -118,8 +147,8 @@ def index():
     try:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT content FROM todos ORDER BY id ASC;")
-        todos = [row[0] for row in cur.fetchall()]
+        cur.execute("SELECT id, content, done FROM todos ORDER BY id ASC;")
+        todos = cur.fetchall()
         cur.close()
         conn.close()
     except Exception as e:
@@ -134,13 +163,27 @@ def add_todo():
         try:
             conn = get_db()
             cur = conn.cursor()
-            cur.execute("INSERT INTO todos (content) VALUES (%s);", (content,))
+            cur.execute("INSERT INTO todos (content, done) VALUES (%s, %s);", (content, False))
             conn.commit()
             cur.close()
             conn.close()
         except Exception as e:
             print(f"Error inserting todo: {e}")
     return redirect(url_for("index"))
+
+@app.route("/todos/<int:todo_id>", methods=["PUT"])
+def update_todo(todo_id):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("UPDATE todos SET done = TRUE WHERE id = %s;", (todo_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "updated", "id": todo_id}), 200
+    except Exception as e:
+        print(f"Error updating todo: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT)
