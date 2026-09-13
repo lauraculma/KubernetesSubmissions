@@ -1,7 +1,8 @@
 import os
-import requests
+import asyncio
 import psycopg2
 from flask import Flask, request, jsonify, render_template_string, redirect, url_for, Response
+from nats.aio.client import Client as NATS
 
 app = Flask(__name__)
 PORT = int(os.getenv("PORT", 5000))
@@ -9,8 +10,24 @@ DB_HOST = os.getenv("POSTGRES_HOST", "postgres-svc")
 DB_NAME = os.getenv("POSTGRES_DB", "postgres")
 DB_USER = os.getenv("POSTGRES_USER", "postgres")
 DB_PASS = os.getenv("POSTGRES_PASSWORD", "postgres")
+NATS_URL = os.getenv("NATS_URL", "nats://nats-svc:4222")
 
 is_healthy = True
+
+def send_nats_message(message):
+    async def _send():
+        try:
+            nc = NATS()
+            await nc.connect(NATS_URL)
+            await nc.publish("todos", message.encode())
+            await nc.flush()
+            await nc.close()
+        except Exception as e:
+            print(f"Error publishing to NATS: {e}")
+    try:
+        asyncio.run(_send())
+    except Exception as e:
+        print(f"Asyncio error sending NATS message: {e}")
 
 def get_db():
     return psycopg2.connect(
@@ -31,7 +48,6 @@ def init_db():
                 done BOOLEAN DEFAULT FALSE
             );
         """)
-        # Asegurar la columna done si la tabla ya existía previamente
         cur.execute("""
             ALTER TABLE todos ADD COLUMN IF NOT EXISTS done BOOLEAN DEFAULT FALSE;
         """)
@@ -167,6 +183,7 @@ def add_todo():
             conn.commit()
             cur.close()
             conn.close()
+            send_nats_message(f"A todo was created: {content}")
         except Exception as e:
             print(f"Error inserting todo: {e}")
     return redirect(url_for("index"))
@@ -176,10 +193,13 @@ def update_todo(todo_id):
     try:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("UPDATE todos SET done = TRUE WHERE id = %s;", (todo_id,))
+        cur.execute("UPDATE todos SET done = TRUE WHERE id = %s RETURNING content;", (todo_id,))
+        row = cur.fetchone()
         conn.commit()
         cur.close()
         conn.close()
+        content = row[0] if row else str(todo_id)
+        send_nats_message(f"A todo was marked as done: {content}")
         return jsonify({"status": "updated", "id": todo_id}), 200
     except Exception as e:
         print(f"Error updating todo: {e}")
